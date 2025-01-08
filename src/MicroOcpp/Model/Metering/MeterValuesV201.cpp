@@ -51,11 +51,11 @@ using namespace MicroOcpp::Ocpp201;
 
 SampledValueProperties::SampledValueProperties() : MemoryManaged("v201.MeterValues.SampledValueProperties") { }
 SampledValueProperties::SampledValueProperties(const SampledValueProperties& other) :
-        MemoryManaged(other.getMemoryTag()), 
-        format(other.format), 
-        measurand(other.measurand), 
-        phase(other.phase), 
-        location(other.location), 
+        MemoryManaged(other.getMemoryTag()),
+        format(other.format),
+        measurand(other.measurand),
+        phase(other.phase),
+        location(other.location),
         unitOfMeasureUnit(other.unitOfMeasureUnit),
         unitOfMeasureMultiplier(other.unitOfMeasureMultiplier) {
 
@@ -81,7 +81,7 @@ SampledValue::SampledValue(double value, ReadingContext readingContext, SampledV
 
 bool SampledValue::toJson(JsonDoc& out) {
 
-    size_t unitOfMeasureElements = 
+    size_t unitOfMeasureElements =
             (properties.getUnitOfMeasureUnit() ? 1 : 0) +
             (properties.getUnitOfMeasureMultiplier() ? 1 : 0);
 
@@ -133,7 +133,7 @@ uint8_t& SampledValueInput::getMeasurandTypeFlags() {
 
 MeterValue::MeterValue(const Timestamp& timestamp, SampledValue **sampledValue, size_t sampledValueSize) :
         MemoryManaged("v201.MeterValues.MeterValue"), timestamp(timestamp), sampledValue(sampledValue), sampledValueSize(sampledValueSize) {
-    
+
 }
 
 MeterValue::~MeterValue() {
@@ -157,16 +157,16 @@ bool MeterValue::toJson(JsonDoc& out) {
     capacity += JSON_OBJECT_SIZE(2) +
                 JSONDATE_LENGTH + 1 +
                 JSON_ARRAY_SIZE(sampledValueSize);
-                
+
 
     out = initJsonDoc("v201.MeterValues.MeterValue", capacity);
 
     char timestampStr [JSONDATE_LENGTH + 1];
     timestamp.toJsonString(timestampStr, sizeof(timestampStr));
-    
+
     out["timestamp"] = timestampStr;
     JsonArray sampledValueArray = out.createNestedArray("sampledValue");
-    
+
     for (size_t i = 0; i < sampledValueSize; i++) {
         JsonDoc sampledValueJson = initJsonDoc(getMemoryTag());
         sampledValue[i]->toJson(sampledValueJson);
@@ -257,7 +257,7 @@ std::unique_ptr<MeterValue> MeteringServiceEvse::takeMeterValue(Variable *measur
             for (size_t i = 0; i < samplesWritten; i++) {
                 delete sampledValue[i];
             }
-            delete sampledValue;
+            MO_FREE(sampledValue);
         }
         return nullptr;
     }
