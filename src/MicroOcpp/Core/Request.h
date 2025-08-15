@@ -8,6 +8,8 @@
 #define MESSAGE_TYPE_CALL 2
 #define MESSAGE_TYPE_CALLRESULT 3
 #define MESSAGE_TYPE_CALLERROR 4
+#define MESSAGE_TYPE_CALLRESULTERROR 5
+#define MESSAGE_TYPE_SEND 6
 
 #include <memory>
 
@@ -65,6 +67,8 @@ public:
         Failure
     };
     CreateRequestResult createRequest(JsonDoc& out);
+
+    CreateRequestResult createSend(JsonDoc& out);
 
    /**
     * Decides if message belongs to this operation instance and if yes, proccesses it. Receives both Confirmations and Errors

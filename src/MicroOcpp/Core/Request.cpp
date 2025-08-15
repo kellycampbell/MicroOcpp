@@ -114,6 +114,54 @@ Request::CreateRequestResult Request::createRequest(JsonDoc& requestJson) {
     return CreateRequestResult::Success;
 }
 
+Request::CreateRequestResult Request::createSend(JsonDoc& requestJson) {
+
+    if (messageID.empty()) {
+        char uuid [37] = {'\0'};
+        generateUUID(uuid, 37);
+        messageID = uuid;
+    }
+
+    /*
+     * Create the OCPP message
+     */
+    auto requestPayload = operation->createReq();
+    if (!requestPayload) {
+        return CreateRequestResult::Failure;
+    }
+
+    /*
+     * Create OCPP-J Remote Procedure Call header
+     */
+    size_t json_buffsize = JSON_ARRAY_SIZE(4) + (messageID.length() + 1) + requestPayload->capacity();
+    requestJson = initJsonDoc(getMemoryTag(), json_buffsize);
+
+    requestJson.add(MESSAGE_TYPE_SEND);                    //MessageType
+    requestJson.add(messageID);                      //Unique message ID
+    requestJson.add(operation->getOperationType());  //Action
+    requestJson.add(*requestPayload);                      //Payload
+
+    if (MO_DBG_LEVEL >= MO_DL_DEBUG && mocpp_tick_ms() - debugRequest_start >= 10000) { //print contents on the console
+        debugRequest_start = mocpp_tick_ms();
+
+        char *buf = new char[1024];
+        size_t len = 0;
+        if (buf) {
+            len = serializeJson(requestJson, buf, 1024);
+        }
+
+        if (!buf || len < 1) {
+            MO_DBG_DEBUG("Try to send request: %s", operation->getOperationType());
+        } else {
+            MO_DBG_DEBUG("Try to send request: %.*s (...)", 128, buf);
+        }
+
+        delete[] buf;
+    }
+
+    return CreateRequestResult::Success;
+}
+
 bool Request::receiveResponse(JsonArray response){
     /*
      * check if messageIDs match. If yes, continue with this function. If not, return false for message not consumed
