@@ -50,7 +50,7 @@ std::shared_ptr<Transaction> ConnectorTransactionStore::getTransaction(unsigned 
     }
 
     //cache miss - load tx from flash if existent
-    
+
     if (!filesystem) {
         MO_DBG_DEBUG("no FS adapter");
         return nullptr;
@@ -135,7 +135,7 @@ bool ConnectorTransactionStore::commit(Transaction *transaction) {
         MO_DBG_ERR("fn error: %i", ret);
         return false;
     }
-    
+
     auto txDoc = initJsonDoc(getMemoryTag());
     if (!serializeTransaction(*transaction, txDoc)) {
         MO_DBG_ERR("Serialization error");
@@ -172,7 +172,7 @@ bool ConnectorTransactionStore::remove(unsigned int txNr) {
     }
 
     MO_DBG_DEBUG("remove %s", fn);
-    
+
     return filesystem->remove(fn);
 }
 
@@ -373,7 +373,7 @@ bool TransactionStoreEvse::deserializeTransaction(Transaction& tx, JsonObject tx
     if (txJson.containsKey("idToken")) {
         IdToken idToken;
         if (!idToken.parseCstr(
-                    txJson["idToken"]["idToken"] | (const char*)nullptr, 
+                    txJson["idToken"]["idToken"] | (const char*)nullptr,
                     txJson["idToken"]["type"]    | (const char*)nullptr)) {
             return false;
         }
@@ -418,7 +418,7 @@ bool TransactionStoreEvse::deserializeTransaction(Transaction& tx, JsonObject tx
             return false;
         }
         if (!stopIdToken->parseCstr(
-                    txJson["stopIdToken"]["idToken"] | (const char*)nullptr, 
+                    txJson["stopIdToken"]["idToken"] | (const char*)nullptr,
                     txJson["stopIdToken"]["type"]    | (const char*)nullptr)) {
             return false;
         }
@@ -445,7 +445,7 @@ bool TransactionStoreEvse::deserializeTransaction(Transaction& tx, JsonObject tx
 }
 
 bool TransactionStoreEvse::serializeTransactionEvent(TransactionEventData& txEvent, JsonObject txEventJson) {
-    
+
     if (txEvent.eventType != TransactionEventData::Type::Updated) {
         txEventJson["eventType"] = serializeTransactionEventType(txEvent.eventType);
     }
@@ -461,7 +461,7 @@ bool TransactionStoreEvse::serializeTransactionEvent(TransactionEventData& txEve
     if (serializeTransactionEventTriggerReason(txEvent.triggerReason)) {
         txEventJson["triggerReason"] = serializeTransactionEventTriggerReason(txEvent.triggerReason);
     }
-    
+
     if (txEvent.offline) {
         txEventJson["offline"] = true;
     }
@@ -504,7 +504,7 @@ bool TransactionStoreEvse::serializeTransactionEvent(TransactionEventData& txEve
 
     txEventJson["opNr"] = txEvent.opNr;
     txEventJson["attemptNr"] = txEvent.attemptNr;
-    
+
     if (txEvent.attemptTime > MIN_TIME) {
         char timeStr [JSONDATE_LENGTH + 1] = {'\0'};
         txEvent.attemptTime.toJsonString(timeStr, JSONDATE_LENGTH + 1);
@@ -540,7 +540,7 @@ bool TransactionStoreEvse::deserializeTransactionEvent(TransactionEventData& txE
         return false;
     }
     txEvent.triggerReason = triggerReason;
-    
+
     if (txEventJson.containsKey("offline") && !txEventJson["offline"].is<bool>()) {
         return false;
     }
@@ -591,7 +591,7 @@ bool TransactionStoreEvse::deserializeTransactionEvent(TransactionEventData& txE
             return false;
         }
         if (!idToken->parseCstr(
-                    txEventJson["idToken"]["idToken"] | (const char*)nullptr, 
+                    txEventJson["idToken"]["idToken"] | (const char*)nullptr,
                     txEventJson["idToken"]["type"]    | (const char*)nullptr)) {
             return false;
         }
@@ -711,9 +711,9 @@ std::unique_ptr<Transaction> TransactionStoreEvse::loadTransaction(unsigned int 
     }
 
     char fnPrefix [MO_MAX_PATH_SIZE];
-    auto ret= snprintf(fnPrefix, sizeof(fnPrefix), "tx201-%u-%u-", evseId, txNr);
+    auto ret = snprintf(fnPrefix, sizeof(fnPrefix), "tx201-%u-%u-", evseId, txNr);
     if (ret < 0 || (size_t)ret >= sizeof(fnPrefix)) {
-        MO_DBG_ERR("fn error");
+        MO_DBG_ERR("fn error: %i", ret);
         return nullptr;
     }
     size_t fnPrefixLen = strlen(fnPrefix);
@@ -748,8 +748,9 @@ std::unique_ptr<Transaction> TransactionStoreEvse::loadTransaction(unsigned int 
     }
 
     size_t msize;
-    if (filesystem->stat(fn, &msize) != 0) {
-        MO_DBG_ERR("tx201-%u-%u memory corruption", evseId, txNr);
+    ret = filesystem->stat(fn, &msize);
+    if (ret != 0) {
+        MO_DBG_ERR("tx201-%u-%u memory corruption: %i", evseId, txNr, ret);
         return nullptr;
     }
 
@@ -995,7 +996,7 @@ bool TransactionStoreEvse::remove(unsigned int txNr) {
     char fnPrefix [MO_MAX_PATH_SIZE];
     auto ret= snprintf(fnPrefix, sizeof(fnPrefix), "tx201-%u-%u-", evseId, txNr);
     if (ret < 0 || (size_t)ret >= sizeof(fnPrefix)) {
-        MO_DBG_ERR("fn error");
+        MO_DBG_ERR("fn error: %i", ret);
         return false;
     }
     size_t fnPrefixLen = strlen(fnPrefix);
@@ -1021,12 +1022,12 @@ bool TransactionStoreEvse::remove(Transaction& tx, unsigned int seqNo) {
         char fn [MO_MAX_PATH_SIZE];
         auto ret = snprintf(fn, sizeof(fn), "%stx201-%u-%u-%u.json", MO_FILENAME_PREFIX, evseId, tx.txNr, tx.seqNoEnd);
         if (ret < 0 || (size_t)ret >= sizeof(fn)) {
-            MO_DBG_ERR("fn error");
+            MO_DBG_ERR("fn error: %i", ret);
             return false;
         }
 
         auto doc = FilesystemUtils::loadJson(filesystem, fn, getMemoryTag());
-        
+
         if (!doc || !doc->containsKey("tx")) {
             //no valid tx201 file at seqNoEnd. Commit tx into file seqNoEnd, then remove file at seqNo
 
@@ -1056,7 +1057,7 @@ bool TransactionStoreEvse::remove(Transaction& tx, unsigned int seqNo) {
         char fn [MO_MAX_PATH_SIZE];
         auto ret = snprintf(fn, sizeof(fn), "%stx201-%u-%u-%u.json", MO_FILENAME_PREFIX, evseId, tx.txNr, seqNo);
         if (ret < 0 || (size_t)ret >= sizeof(fn)) {
-            MO_DBG_ERR("fn error");
+            MO_DBG_ERR("fn error: %i", ret);
             return false;
         }
 
