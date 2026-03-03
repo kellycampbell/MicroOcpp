@@ -2,8 +2,8 @@
 // Copyright Matthias Akstaller 2019 - 2024
 // MIT License
 
-#ifndef MO_NOTIFYREPORT_H
-#define MO_NOTIFYREPORT_H
+#ifndef MO_NOTIFYEVENT_H
+#define MO_NOTIFYEVENT_H
 
 #include <MicroOcpp/Version.h>
 
@@ -20,7 +20,7 @@ class Variable;
 
 namespace Ocpp201 {
 
-class NotifyReport : public Operation, public MemoryManaged {
+class NotifyEvent : public Operation, public MemoryManaged {
 private:
     Model& model;
 
@@ -31,7 +31,7 @@ private:
     Vector<Variable*> reportData;
 public:
 
-    NotifyReport(Model& model, int requestId, const Timestamp& generatedAt, bool tbc, int seqNo, const Vector<Variable*>& reportData);
+    NotifyEvent(Model& model, int requestId, const Timestamp& generatedAt, bool tbc, int seqNo, const Vector<Variable*>& reportData);
 
     const char* getOperationType() override;
 

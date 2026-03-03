@@ -37,7 +37,7 @@ private:
     unsigned long timeout_start = 0;
     unsigned long timeout_period = 40000;
     bool timed_out = false;
-    
+
     unsigned long debugRequest_start = 0;
 
     bool requestSent = false;
@@ -56,9 +56,9 @@ public:
 
     /**
      * Sends the message(s) that belong to the OCPP Operation. This function puts a JSON message on the lower protocol layer.
-     * 
+     *
      * For instance operation Authorize: sends Authorize.req(idTag)
-     * 
+     *
      * This function is usually called multiple times by the Arduino loop(). On first call, the request is initially sent. In the
      * succeeding calls, the implementers decide to either resend the request, or do nothing as the operation is still pending.
      */
@@ -67,19 +67,20 @@ public:
         Failure
     };
     CreateRequestResult createRequest(JsonDoc& out);
+    CreateRequestResult createRequest(JsonDoc& out, int messageType);
 
     CreateRequestResult createSend(JsonDoc& out);
 
    /**
     * Decides if message belongs to this operation instance and if yes, proccesses it. Receives both Confirmations and Errors
-    * 
+    *
     * Returns true if JSON object has been consumed, false otherwise.
     */
     bool receiveResponse(JsonArray json);
 
     /**
      * Processes the request in the JSON document. Returns true on success, false on error.
-     * 
+     *
      * Returns false if the request doesn't belong to the corresponding operation instance
      */
     bool receiveRequest(JsonArray json);
@@ -107,11 +108,11 @@ public:
      * The listener onAbort will be called whenever the engine stops trying to execute an operation normally which were initiated
      * on this device. This includes timeouts or if the ocpp counterpart sends an error (then it will be called in addition to
      * onTimeout or onReceiveError, respectively). Causes for onAbort:
-     * 
+     *
      *    - Cannot create OCPP payload
      *    - Timeout
      *    - Receives error msg instead of confirmation msg
-     * 
+     *
      * The engine uses this listener in both modes: EVSE mode and Central system mode
      */
     void setOnAbortListener(OnAbortListener onAbort);

@@ -67,54 +67,14 @@ void Request::setMessageID(const char *id){
 }
 
 Request::CreateRequestResult Request::createRequest(JsonDoc& requestJson) {
-
-    if (messageID.empty()) {
-        char uuid [37] = {'\0'};
-        generateUUID(uuid, 37);
-        messageID = uuid;
-    }
-
-    /*
-     * Create the OCPP message
-     */
-    auto requestPayload = operation->createReq();
-    if (!requestPayload) {
-        return CreateRequestResult::Failure;
-    }
-
-    /*
-     * Create OCPP-J Remote Procedure Call header
-     */
-    size_t json_buffsize = JSON_ARRAY_SIZE(4) + (messageID.length() + 1) + requestPayload->capacity();
-    requestJson = initJsonDoc(getMemoryTag(), json_buffsize);
-
-    requestJson.add(MESSAGE_TYPE_CALL);                    //MessageType
-    requestJson.add(messageID);                      //Unique message ID
-    requestJson.add(operation->getOperationType());  //Action
-    requestJson.add(*requestPayload);                      //Payload
-
-    if (MO_DBG_LEVEL >= MO_DL_DEBUG && mocpp_tick_ms() - debugRequest_start >= 10000) { //print contents on the console
-        debugRequest_start = mocpp_tick_ms();
-
-        char *buf = new char[1024];
-        size_t len = 0;
-        if (buf) {
-            len = serializeJson(requestJson, buf, 1024);
-        }
-
-        if (!buf || len < 1) {
-            MO_DBG_DEBUG("Try to send request: %s", operation->getOperationType());
-        } else {
-            MO_DBG_DEBUG("Try to send request: %.*s (...)", 128, buf);
-        }
-
-        delete[] buf;
-    }
-
-    return CreateRequestResult::Success;
+    return createRequest(requestJson, MESSAGE_TYPE_CALL);
 }
 
 Request::CreateRequestResult Request::createSend(JsonDoc& requestJson) {
+    return createRequest(requestJson, MESSAGE_TYPE_SEND);
+}
+
+Request::CreateRequestResult Request::createRequest(JsonDoc& requestJson, int messageType) {
 
     if (messageID.empty()) {
         char uuid [37] = {'\0'};
@@ -136,7 +96,7 @@ Request::CreateRequestResult Request::createSend(JsonDoc& requestJson) {
     size_t json_buffsize = JSON_ARRAY_SIZE(4) + (messageID.length() + 1) + requestPayload->capacity();
     requestJson = initJsonDoc(getMemoryTag(), json_buffsize);
 
-    requestJson.add(MESSAGE_TYPE_SEND);                    //MessageType
+    requestJson.add(messageType);                    //MessageType
     requestJson.add(messageID);                      //Unique message ID
     requestJson.add(operation->getOperationType());  //Action
     requestJson.add(*requestPayload);                      //Payload
@@ -218,15 +178,15 @@ bool Request::receiveRequest(JsonArray request) {
         MO_DBG_ERR("malformatted msgId");
         return false;
     }
-  
+
     setMessageID(request[1].as<const char*>());
-    
+
     /*
      * Hand the payload over to the Request object
      */
     JsonObject payload = request[3];
     operation->processReq(payload);
-    
+
     /*
      * Hand the payload over to the first Callback. It is a callback that notifies the client that request has been processed in the OCPP-library
      */

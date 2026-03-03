@@ -82,6 +82,7 @@ public:
 
     void sendRequest(std::unique_ptr<Request> request); //send an OCPP operation request to the server; adds request to default queue
     void sendRequestPreBoot(std::unique_ptr<Request> request); //send an OCPP operation request to the server; adds request to preBootQueue
+    void sendRequestImmediate(std::unique_ptr<Request> request); //send an OCPP asynchronous SEND request immediately
 
     void addSendQueue(RequestEmitter* sendQueue);
     void setPreBootSendQueue(VolatileRequestQueue *preBootQueue);
